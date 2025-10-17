@@ -1,2 +1,4 @@
-package org.example.moneyExchanger.utils;public class DbUtil {
+package org.example.moneyExchanger.utils;
+
+public class DbUtil {
 }

@@ -1,2 +1,4 @@
-package org.example.moneyExchanger.servlet;public class CurrencyServlet {
+package org.example.moneyExchanger.servlet;
+
+public class CurrencyServlet {
 }

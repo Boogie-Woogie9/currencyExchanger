@@ -12,4 +12,8 @@
         <servlet-name>first-servlet</servlet-name>
         <url-pattern>/my-servlet</url-pattern>
     </servlet-mapping>
+    
+    <servlet>
+        <servlet-name>CurrencyServlet</servlet-name>
+    </servlet>
 </web-app>

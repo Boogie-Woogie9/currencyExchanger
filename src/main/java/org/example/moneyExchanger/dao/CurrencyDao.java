@@ -1,2 +1,4 @@
-package org.example.moneyExchanger.dao;public class CurrencyDao {
+package org.example.moneyExchanger.dao;
+
+public class CurrencyDao {
 }
