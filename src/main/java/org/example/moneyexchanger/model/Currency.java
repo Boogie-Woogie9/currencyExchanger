@@ -1,4 +1,4 @@
-package org.example.moneyExchanger.model;
+package org.example.moneyexchanger.model;
 
 import lombok.Getter;
 import lombok.Setter;
@@ -18,5 +18,13 @@ public class Currency {
         this.code = code;
         this.fullName = fullName;
         this.sign = sign;
+    }
+
+    @Override
+    public String toString() {
+        return new StringBuilder().append("id =").append(id).
+                append(", code = ").append(code)
+                .append(", fullName = ").append(fullName)
+                .append(", sign = ").append(fullName).toString();
     }
 }

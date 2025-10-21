@@ -1,4 +1,4 @@
-package org.example.moneyExchanger.model;
+package org.example.moneyexchanger.model;
 
 import lombok.Getter;
 import lombok.Setter;
