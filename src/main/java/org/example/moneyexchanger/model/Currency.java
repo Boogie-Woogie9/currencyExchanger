@@ -7,13 +7,13 @@ import lombok.Setter;
 @Setter
 public class Currency {
 
-    private int id;
+    private Long id;
     private String code;
     private String fullName;
     private String sign;
     public Currency(){}
 
-    public Currency(int id, String code, String fullName, String sign){
+    public Currency(Long id, String code, String fullName, String sign){
         this.id = id;
         this.code = code;
         this.fullName = fullName;

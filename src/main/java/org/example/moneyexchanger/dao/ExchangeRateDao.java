@@ -6,69 +6,146 @@ import java.math.BigDecimal;
 import java.sql.*;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Optional;
 
-public class ExchangeRateDao {
+public class ExchangeRateDao implements CrudRepository<ExchangeRate> {
+
     private final CurrencyDao currencyDao = new CurrencyDao();
 
-    //READ (все обменные курсы)
-    public List<ExchangeRate> getAllExchangeRates() throws SQLException {
-        String sql = "SELECT * FROM ExchangeRates";
-        List<ExchangeRate> rates = new ArrayList<>();
-
-        try (Connection conn = Database.getConnection();
-             Statement stmt = conn.createStatement();
-             ResultSet rs = stmt.executeQuery(sql)) {
-
-            while (rs.next()) {
-                Currency base = currencyDao.getCurrencyById(rs.getInt(1));
-                Currency target = currencyDao.getCurrencyById(rs.getInt(2));
-                BigDecimal rate = rs.getBigDecimal(3);
-
-                rates.add(new ExchangeRate(
-                        rs.getInt(0),
-                        base,
-                        target,
-                        rate
-                ));
-            }
+    private ExchangeRate createNewExchangeRate(ResultSet resultSet) {
+        try {
+            return new ExchangeRate(
+                    resultSet.getLong(0),
+                    currencyDao.findById(resultSet.getLong(1)).get(),
+                    currencyDao.findById(resultSet.getLong(2)).get(),
+                    resultSet.getBigDecimal(4));
+        } catch (SQLException e) {
+            throw new RuntimeException(e);
         }
-        return rates;
     }
 
     //CREATE (добавить новые обменные курсы)
-    public ExchangeRate insertExchangeRate(String baseCode, String targetCode, BigDecimal rateValue) throws SQLException {
-        Currency base = currencyDao.getCurrencyByCode(baseCode);
-        Currency target = currencyDao.getCurrencyByCode(targetCode);
-
-        if (base == null || target == null)
-            throw new SQLException("One or both currencies not found");
+    @Override
+    public void save(ExchangeRate entity) {
 
         String sql = "INSERT INTO ExchangeRates (BaseCurrencyId, TargetCurrencyId, Rate) VALUES (?, ?, ?)";
         try (Connection conn = Database.getConnection();
              PreparedStatement pstmt = conn.prepareStatement(sql, Statement.RETURN_GENERATED_KEYS)) {
 
-            pstmt.setInt(1, base.getId());
-            pstmt.setInt(2, target.getId());
-            pstmt.setBigDecimal(3, rateValue);
+            pstmt.setLong(1, entity.getBaseCurrency().getId());
+            pstmt.setLong(2, entity.getTargetCurrency().getId());
+            pstmt.setBigDecimal(3, entity.getRate());
             pstmt.executeUpdate();
 
-            ResultSet keys = pstmt.getGeneratedKeys();
-            if (keys.next()) {
-                return new ExchangeRate(keys.getInt(1), base, target, rateValue);
-            } else {
-                throw new SQLException("ExchangeRate insert failed, no ID obtained");
+        } catch (SQLException e) {
+            throw new RuntimeException(e);
+        }
+    }
+
+    //READ (все обменные курсы)
+    @Override
+    public List<ExchangeRate> findAll() {
+        String sql = "SELECT * FROM ExchangeRates";
+        List<ExchangeRate> rates = new ArrayList<>();
+
+        try (Connection conn = Database.getConnection();
+             Statement stmt = conn.createStatement();
+             ResultSet resultSet = stmt.executeQuery(sql)) {
+
+            while (resultSet.next()) {
+                rates.add(createNewExchangeRate(resultSet));
             }
+        } catch (SQLException e) {
+            throw new RuntimeException(e);
+        }
+        return rates;
+    }
+
+    //READ (найти куср обмена по id)
+    @Override
+    public Optional<ExchangeRate> findById(Long id) {
+        String sql = "SELECT 1 FROM ExchangeRates WHERE ID = ?";
+
+        try (Connection conn = Database.getConnection();
+             PreparedStatement pstmt = conn.prepareStatement(sql)) {
+
+            pstmt.setLong(1, id);
+            ResultSet rs = pstmt.executeQuery(sql);
+
+            if (rs.wasNull()) {
+                System.out.println("ExchangeRate with id = " + id + "was not found");
+                return null;
+            }
+
+            //Получаем данные
+            Optional<Currency> base = currencyDao.findById(rs.getLong(1));
+            Optional<Currency> target = currencyDao.findById(rs.getLong(2));
+            BigDecimal rate = rs.getBigDecimal(3);
+
+            return Optional.ofNullable(createNewExchangeRate(rs));
+        } catch (SQLException e) {
+            throw new RuntimeException(e);
+        }
+    }
+
+    //READ (найти курс обмена по кодам)
+    public Optional<ExchangeRate> findByCodes(String baseCurrencyCode, String targetCurrencyCode) {
+        ExchangeRate exchangeRate = null;
+        final String query = "SELECT * FROM ExchangeRates WHERE " +
+                "basecurrencyid=? AND targetcurrencyid=?";
+
+        try (Connection connection = Database.getConnection();
+             PreparedStatement statement = connection.prepareStatement(query)) {
+
+            statement.setLong(1,
+                    currencyDao.findByName(baseCurrencyCode).get().getId());
+            statement.setLong(2,
+                    currencyDao.findByName(targetCurrencyCode).get().getId());
+
+            statement.execute();
+
+            ResultSet resultSet = statement.getResultSet();
+
+            if (resultSet.next()) {
+                exchangeRate = createNewExchangeRate(resultSet);
+            }
+        } catch (SQLException e) {
+            throw new RuntimeException(e);
+        }
+
+        return Optional.ofNullable(exchangeRate);
+    }
+
+    //UPDATE (обновить обменный курс)
+    @Override
+    public void update(ExchangeRate entity) {
+        String sql = "UPDATE ExchangeRates SET Rate = ? WHERE ID = ?";
+
+        try (Connection conn = Database.getConnection();
+             PreparedStatement pstmt = conn.prepareStatement(sql)) {
+            pstmt.setBigDecimal(1, entity.getRate());
+            pstmt.setLong(2, entity.getId());
+
+            int affectedRows = pstmt.executeUpdate();
+
+            if (affectedRows == 0) {
+                System.out.println("NOTHING TO UPDATE");
+            }
+            System.out.println("ExchangeRate with id = " + entity.getId() + " was UPDATED successfully");
+        } catch (SQLException e) {
+            throw new RuntimeException(e);
         }
     }
 
     //DELETE (удалить обменный курс)
-    public void deleteExchangeRateById(int id) throws SQLException {
+    @Override
+    public void delete(Long id) {
         String sql = "DELETE FROM ExchangeRates WHERE ID = ?";
 
         try (Connection conn = Database.getConnection();
-            PreparedStatement pstmt = conn.prepareStatement(sql)){
+             PreparedStatement pstmt = conn.prepareStatement(sql)) {
 
-            pstmt.setInt(1, id);
+            pstmt.setLong(1, id);
             int affectedRows = pstmt.executeUpdate();
 
             if (affectedRows == 0) {
@@ -80,54 +157,6 @@ public class ExchangeRateDao {
         } catch (SQLException e) {
             System.err.println("Error deleting ExchangeRate with id = " + id + ": " + e.getMessage());
 
-        }
-    }
-
-    //UPDATE (обновить обменный курс - только сам курс)
-    public ExchangeRate updateExchangeRate(int id, BigDecimal newRate) throws SQLException{
-        String sql = "UPDATE ExchangeRates SET Rate = ? WHERE ID = ?";
-        
-        try (Connection conn = Database.getConnection();
-        PreparedStatement pstmt = conn.prepareStatement(sql)) {
-            pstmt.setBigDecimal(1, newRate);
-            pstmt.setInt(2, id);
-            
-            int affectedRows = pstmt.executeUpdate();
-            
-            if (affectedRows == 0){
-                System.out.println("NOTHING TO UPDATE");
-            }
-            System.out.println("ExchangeRate with id = " + id + " was UPDATED successfully");
-        }
-        return getExchangeRateById(id);
-    }
-
-    //READ (найти обменный курс по id)
-    private ExchangeRate getExchangeRateById(int id) throws SQLException{
-        String sql = "SELECT 1 FROM ExchangeRates WHERE ID = ?";
-
-        try (Connection conn = Database.getConnection();
-            PreparedStatement pstmt = conn.prepareStatement(sql)) {
-
-            pstmt.setInt(1, id);
-            ResultSet rs = pstmt.executeQuery(sql);
-
-            if (rs.wasNull()){
-                System.out.println("ExchangeRate with id = " + id + "was not found");
-                return null;
-            }
-
-            //Получаем данные
-            Currency base = currencyDao.getCurrencyById(rs.getInt(1));
-            Currency target = currencyDao.getCurrencyById(rs.getInt(2));
-            BigDecimal rate = rs.getBigDecimal(3);
-
-            return new ExchangeRate(
-                    rs.getInt(0),
-                    base,
-                    target,
-                    rate
-            );
         }
     }
 }
