@@ -32,7 +32,6 @@ public class CurrencyServlet extends HttpServlet {
 
     @Override
     protected void doGet(HttpServletRequest req, HttpServletResponse resp) throws ServletException, IOException {
-        resp.setContentType("application/json; charset=UTF-8");
 
         String pathInfo = req.getPathInfo();
         if (req.getServletPath().equals("/currencies")){

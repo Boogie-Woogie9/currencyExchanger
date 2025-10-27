@@ -33,7 +33,6 @@ public class ExchangeRateServlet extends HttpServlet {
     // ===== GET /exchangeRates и /exchangeRate/USDRUB =====
     @Override
     protected void doGet(HttpServletRequest req, HttpServletResponse resp) throws IOException {
-        resp.setContentType("application/json; charset=UTF-8");
         String path = req.getPathInfo();
 
         try {
@@ -70,7 +69,6 @@ public class ExchangeRateServlet extends HttpServlet {
     // ===== POST /exchangeRates =====
     @Override
     protected void doPost(HttpServletRequest req, HttpServletResponse resp) throws IOException {
-        resp.setContentType("application/json; charset=UTF-8");
 
         String baseCode = req.getParameter("baseCurrencyCode");
         String targetCode = req.getParameter("targetCurrencyCode");
@@ -104,7 +102,6 @@ public class ExchangeRateServlet extends HttpServlet {
     // ===== PATCH /exchangeRate/USDRUB =====
     @Override
     protected void doPatch(HttpServletRequest req, HttpServletResponse resp) throws IOException {
-        resp.setContentType("application/json; charset=UTF-8");
 
         String path = req.getPathInfo();
         if (path == null || path.equals("/")) {
