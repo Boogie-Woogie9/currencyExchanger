@@ -42,10 +42,10 @@ public class CurrencyDao implements CrudRepository<Currency> {
 
             while (rs.next()){
                 Currency currency = new Currency(
-                        rs.getLong(0),
-                        rs.getString(1),
+                        rs.getLong(1),
                         rs.getString(2),
-                        rs.getString(3)
+                        rs.getString(3),
+                        rs.getString(4)
                 );
                 currencies.add(currency);
                 System.out.println("Currency Found: " + currency);
@@ -68,10 +68,10 @@ public class CurrencyDao implements CrudRepository<Currency> {
 
             if (rs.next()) {
                 return Optional.of(new Currency(
-                        rs.getLong(0),
-                        rs.getString(1),
+                        rs.getLong(1),
                         rs.getString(2),
-                        rs.getString(3)
+                        rs.getString(3),
+                        rs.getString(4)
                 ));
             } else {
                 return Optional.empty();

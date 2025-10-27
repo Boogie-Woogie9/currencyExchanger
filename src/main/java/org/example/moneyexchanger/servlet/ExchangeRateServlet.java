@@ -6,6 +6,7 @@ import jakarta.servlet.annotation.WebServlet;
 import jakarta.servlet.http.HttpServlet;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
+import lombok.NoArgsConstructor;
 import org.example.moneyexchanger.dto.ExchangeRateDto;
 import org.example.moneyexchanger.model.ExchangeRate;
 import org.example.moneyexchanger.service.ExchangeRateService;
@@ -15,20 +16,20 @@ import java.math.BigDecimal;
 import java.util.List;
 import java.util.Optional;
 
+
+
 @WebServlet(urlPatterns = {"/exchangeRates", "/exchangeRate/*"})
 public class ExchangeRateServlet extends HttpServlet {
 
     private ExchangeRateService service;
-    private final ObjectMapper mapper;
+    private ObjectMapper mapper = new ObjectMapper();
 
-    public ExchangeRateServlet(ExchangeRateService service, ObjectMapper mapper) {
-        this.service = service;
-        this.mapper = mapper;
-    }
+    public ExchangeRateServlet(){}
 
     @Override
     public void init(ServletConfig config) throws ServletException {
-        this.service = (ExchangeRateService) getServletContext().getAttribute("ExchangeRateService");
+        super.init(config);
+        this.service = (ExchangeRateService) config.getServletContext().getAttribute("exchangeRateService");
         if (service == null) {
             throw new IllegalStateException("ExchangeRateService not found in ServletContext!");
         }

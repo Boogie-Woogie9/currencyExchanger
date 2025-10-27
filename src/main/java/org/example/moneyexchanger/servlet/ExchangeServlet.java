@@ -18,16 +18,14 @@ import java.util.Optional;
 public class ExchangeServlet extends HttpServlet {
 
     private ExchangeRateService exchangeRateService;
-    private final ObjectMapper mapper;
+    private ObjectMapper mapper = new ObjectMapper();
 
-    public ExchangeServlet(ExchangeRateService service, ObjectMapper mapper) {
-        this.exchangeRateService = service;
-        this.mapper = mapper;
-    }
+    public ExchangeServlet(){}
 
     @Override
     public void init(ServletConfig config) throws ServletException {
-        this.exchangeRateService = (ExchangeRateService) getServletContext().getAttribute("exchangeRateService");
+        super.init(config);
+        this.exchangeRateService = (ExchangeRateService) config.getServletContext().getAttribute("exchangeRateService");
         if (exchangeRateService == null) {
             throw new IllegalStateException("ExchangeRateService not found in ServletContext");
         }

@@ -15,9 +15,9 @@ public class ExchangeRateDao implements CrudRepository<ExchangeRate> {
     private ExchangeRate createNewExchangeRate(ResultSet resultSet) {
         try {
             return new ExchangeRate(
-                    resultSet.getLong(0),
-                    currencyDao.findById(resultSet.getLong(1)).get(),
+                    resultSet.getLong(1),
                     currencyDao.findById(resultSet.getLong(2)).get(),
+                    currencyDao.findById(resultSet.getLong(3)).get(),
                     resultSet.getBigDecimal(4));
         } catch (SQLException e) {
             return null;

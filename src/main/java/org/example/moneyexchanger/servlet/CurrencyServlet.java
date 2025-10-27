@@ -9,7 +9,6 @@ import jakarta.servlet.http.HttpServletResponse;
 import org.example.moneyexchanger.model.Currency;
 import org.example.moneyexchanger.service.CurrencyService;
 import tools.jackson.databind.ObjectMapper;
-
 import java.io.BufferedReader;
 import java.io.IOException;
 import java.util.List;
@@ -17,17 +16,15 @@ import java.util.List;
 @WebServlet(urlPatterns = {"/currencies", "/currency/*"})
 public class CurrencyServlet extends HttpServlet {
 
-    private transient CurrencyService currencyService;
-    private final ObjectMapper mapper;
+    private CurrencyService currencyService;
+    private ObjectMapper mapper = new ObjectMapper();
 
-    public CurrencyServlet(CurrencyService currencyService, ObjectMapper mapper) {
-        this.currencyService = currencyService;
-        this.mapper = mapper;
-    }
+    public CurrencyServlet(){}
 
     @Override
     public void init(ServletConfig config) throws ServletException {
-        this.currencyService = (CurrencyService) getServletContext().getAttribute("currencyService");
+        super.init(config);
+        this.currencyService = (CurrencyService) config.getServletContext().getAttribute("currencyService");
         if (this.currencyService == null){
             throw new IllegalStateException("CurrencyService not found in ServletContext");
         }
