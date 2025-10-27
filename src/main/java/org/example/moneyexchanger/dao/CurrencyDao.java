@@ -15,7 +15,7 @@ public class CurrencyDao implements CrudRepository<Currency> {
         try (Connection conn = Database.getConnection();
              PreparedStatement pstmt = conn.prepareStatement(sql, Statement.RETURN_GENERATED_KEYS)) {
 
-            pstmt.setString(1, entity.getFullName());
+            pstmt.setString(1, entity.getName());
             pstmt.setString(2, entity.getCode());
             pstmt.setString(3, entity.getSign());
             pstmt.executeUpdate();
@@ -106,6 +106,32 @@ public class CurrencyDao implements CrudRepository<Currency> {
         }
     }
 
+    //READ (найти валюту по коду)
+    public Optional<Currency> findByCode(String code) {
+        String query = "SELECT * FROM Currencies WHERE code = ?";
+
+        try (Connection conn = Database.getConnection()){
+            PreparedStatement pstmt = conn.prepareStatement(query);
+            pstmt.setString(1, code);
+
+            pstmt.executeQuery();
+            ResultSet resultSet = pstmt.getResultSet();
+
+            if (resultSet.next()){
+                return Optional.of(new Currency(
+                        resultSet.getLong(1),
+                        resultSet.getString(2),
+                        resultSet.getString(3),
+                        resultSet.getString(4)
+                ));
+            }
+            return null;
+
+        } catch (SQLException e) {
+            throw new RuntimeException(e);
+        }
+    }
+
     //UPDATE (обновить валюту)
     @Override
     public void update(Currency entity) {
@@ -114,7 +140,7 @@ public class CurrencyDao implements CrudRepository<Currency> {
         try (Connection conn = Database.getConnection()){
             PreparedStatement pstmt = conn.prepareStatement(sql);
             pstmt.setString(1, entity.getCode());
-            pstmt.setString(2, entity.getFullName());
+            pstmt.setString(2, entity.getName());
             pstmt.setString(3, entity.getSign());
             pstmt.setLong(4, entity.getId());
 
@@ -149,4 +175,6 @@ public class CurrencyDao implements CrudRepository<Currency> {
             throw new RuntimeException(e);
         }
     }
+
+
 }

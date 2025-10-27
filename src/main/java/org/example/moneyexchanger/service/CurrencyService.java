@@ -40,6 +40,11 @@ public class CurrencyService {
                 .orElseThrow(() -> new NoSuchElementException("Currency with id=" + id + " not found"));
     }
 
+    public Currency getCurrencyBuName(String name){
+        return currencyDao.findByName(name)
+                .orElseThrow(() -> new NoSuchElementException("Currency with name=" + name + " not found"));
+    }
+
     public Currency createCurrency(String code, String name, String sign) {
         validate(code, name, sign);
         Currency newCurrency = new Currency(code, name, sign);
