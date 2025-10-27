@@ -6,7 +6,6 @@ import jakarta.servlet.annotation.WebServlet;
 import jakarta.servlet.http.HttpServlet;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
-import lombok.NoArgsConstructor;
 import org.example.moneyexchanger.dto.ExchangeRateDto;
 import org.example.moneyexchanger.model.ExchangeRate;
 import org.example.moneyexchanger.service.ExchangeRateService;
@@ -16,15 +15,11 @@ import java.math.BigDecimal;
 import java.util.List;
 import java.util.Optional;
 
-
-
 @WebServlet(urlPatterns = {"/exchangeRates", "/exchangeRate/*"})
 public class ExchangeRateServlet extends HttpServlet {
 
     private ExchangeRateService service;
     private ObjectMapper mapper = new ObjectMapper();
-
-    public ExchangeRateServlet(){}
 
     @Override
     public void init(ServletConfig config) throws ServletException {
@@ -35,24 +30,23 @@ public class ExchangeRateServlet extends HttpServlet {
         }
     }
 
-    // ===== GET /exchangeRates  и  /exchangeRate/USDRUB =====
+    // ===== GET /exchangeRates и /exchangeRate/USDRUB =====
     @Override
     protected void doGet(HttpServletRequest req, HttpServletResponse resp) throws IOException {
         resp.setContentType("application/json; charset=UTF-8");
-
         String path = req.getPathInfo();
 
         try {
             if (path == null || path.equals("/")) {
-                // Получить все курсы
+                // GET /exchangeRates
                 List<ExchangeRate> list = service.getAllExchangeRates();
                 mapper.writeValue(resp.getWriter(), list);
                 resp.setStatus(HttpServletResponse.SC_OK);
             } else {
-                // Получить курс по валютной паре
-                String pair = path.substring(1).toUpperCase(); // например USDRUB
+                // GET /exchangeRate/USDRUB
+                String pair = path.substring(1).toUpperCase();
                 if (pair.length() != 6) {
-                    sendError(resp, HttpServletResponse.SC_BAD_REQUEST, "Invalid currency pair format");
+                    sendError(resp, HttpServletResponse.SC_BAD_REQUEST, "Currency pair code is missing or invalid");
                     return;
                 }
 
@@ -62,7 +56,7 @@ public class ExchangeRateServlet extends HttpServlet {
                 Optional<ExchangeRate> rate = service.getExchangeRateByCodes(base, target);
 
                 if (rate.isEmpty()) {
-                    sendError(resp, HttpServletResponse.SC_NOT_FOUND, "Exchange rate not found");
+                    sendError(resp, HttpServletResponse.SC_NOT_FOUND, "Exchange rate for the pair not found");
                 } else {
                     mapper.writeValue(resp.getWriter(), rate.get());
                     resp.setStatus(HttpServletResponse.SC_OK);
@@ -89,17 +83,19 @@ public class ExchangeRateServlet extends HttpServlet {
 
         try {
             BigDecimal rate = new BigDecimal(rateStr);
-            ExchangeRateDto dto = new ExchangeRateDto(baseCode, targetCode, rate);
+            ExchangeRateDto dto = new ExchangeRateDto(baseCode.toUpperCase(), targetCode.toUpperCase(), rate);
 
             service.createExchangeRate(dto);
 
             // Возвращаем созданный объект
-            Optional<ExchangeRate> created = service.getExchangeRateByCodes(baseCode, targetCode);
+            Optional<ExchangeRate> created = service.getExchangeRateByCodes(baseCode.toUpperCase(), targetCode.toUpperCase());
             mapper.writeValue(resp.getWriter(), created.get());
             resp.setStatus(HttpServletResponse.SC_CREATED);
 
         } catch (IllegalArgumentException e) {
             sendError(resp, HttpServletResponse.SC_BAD_REQUEST, e.getMessage());
+        } catch (IllegalStateException e) {
+            sendError(resp, HttpServletResponse.SC_CONFLICT, e.getMessage());
         } catch (Exception e) {
             sendError(resp, HttpServletResponse.SC_INTERNAL_SERVER_ERROR, e.getMessage());
         }
@@ -112,7 +108,7 @@ public class ExchangeRateServlet extends HttpServlet {
 
         String path = req.getPathInfo();
         if (path == null || path.equals("/")) {
-            sendError(resp, HttpServletResponse.SC_BAD_REQUEST, "Missing currency pair");
+            sendError(resp, HttpServletResponse.SC_BAD_REQUEST, "Currency pair is missing");
             return;
         }
 
@@ -135,7 +131,7 @@ public class ExchangeRateServlet extends HttpServlet {
 
             Optional<ExchangeRate> existing = service.getExchangeRateByCodes(base, target);
             if (existing.isEmpty()) {
-                sendError(resp, HttpServletResponse.SC_NOT_FOUND, "Exchange rate not found");
+                sendError(resp, HttpServletResponse.SC_NOT_FOUND, "Exchange rate for the pair not found");
                 return;
             }
 
@@ -159,3 +155,4 @@ public class ExchangeRateServlet extends HttpServlet {
         mapper.writeValue(resp.getWriter(), java.util.Map.of("message", message));
     }
 }
+
