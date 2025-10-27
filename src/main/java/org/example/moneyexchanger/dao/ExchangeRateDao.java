@@ -20,7 +20,7 @@ public class ExchangeRateDao implements CrudRepository<ExchangeRate> {
                     currencyDao.findById(resultSet.getLong(2)).get(),
                     resultSet.getBigDecimal(4));
         } catch (SQLException e) {
-            throw new RuntimeException(e);
+            return null;
         }
     }
 
@@ -74,7 +74,7 @@ public class ExchangeRateDao implements CrudRepository<ExchangeRate> {
 
             if (rs.wasNull()) {
                 System.out.println("ExchangeRate with id = " + id + "was not found");
-                return null;
+                return Optional.empty();
             }
 
             //Получаем данные

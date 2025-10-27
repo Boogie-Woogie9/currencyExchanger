@@ -17,4 +17,20 @@ public class ExchangeRate {
     private Currency baseCurrency;
     private Currency targetCurrency;
     private BigDecimal rate;
+
+    public ExchangeRate(Currency baseCurrency, Currency targetCurrency, BigDecimal rate) {
+        this.baseCurrency = baseCurrency;
+        this.targetCurrency = targetCurrency;
+        this.rate = rate;
+    }
+
+    @Override
+    public String toString() {
+        return String.format("{\n" +
+                "\"id\": %d,\n" +
+                "\"baseCurrency\": %s,\n" +
+                "\"targetCurrency\": %s,\n" +
+                "\"rate\": %f\n" +
+                "}", id, baseCurrency, targetCurrency, rate);
+    }
 }
