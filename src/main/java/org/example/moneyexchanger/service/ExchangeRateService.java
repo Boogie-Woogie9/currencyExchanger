@@ -5,6 +5,7 @@ import org.example.moneyexchanger.dao.CurrencyDao;
 import org.example.moneyexchanger.dao.ExchangeRateDao;
 import org.example.moneyexchanger.model.Currency;
 import org.example.moneyexchanger.model.ExchangeRate;
+
 import java.math.BigDecimal;
 import java.util.List;
 import java.util.NoSuchElementException;
@@ -28,11 +29,16 @@ public class ExchangeRateService {
         return exchangeRateDao.findByCodes(base, target);
     }
 
+    public ExchangeRate getExchangeRateById(Long id) {
+        return exchangeRateDao.findById(id)
+                .orElseThrow(() -> new NoSuchElementException("ExchangeRate with id =" + id + " not found"));
+    }
+
     public void createExchangeRate(ExchangeRateDto dto) {
 
-        Currency base = currencyDao.findById(dto.getBase().getId())
+        Currency base = currencyDao.findById(Long.valueOf(dto.getBaseId()))
                 .orElseThrow(() -> new IllegalArgumentException("Base currency not found."));
-        Currency target = currencyDao.findById(dto.getTarget().getId())
+        Currency target = currencyDao.findById(Long.valueOf(dto.getTargetId()))
                 .orElseThrow(() -> new IllegalArgumentException("Target currency not found."));
 
         if (dto.getRate() == null || dto.getRate().compareTo(BigDecimal.ZERO) <= 0) {

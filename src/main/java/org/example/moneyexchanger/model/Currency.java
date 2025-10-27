@@ -11,13 +11,13 @@ public class Currency {
 
     private Long id;
     private String code;
-    private String fullName;
+    private String name;
     private String sign;
     public Currency(){}
 
-    public Currency(String code, String fullName, String sign){
+    public Currency(String code, String name, String sign){
         this.code = code;
-        this.fullName = fullName;
+        this.name = name;
         this.sign = sign;
     }
 
@@ -25,7 +25,7 @@ public class Currency {
     public String toString() {
         return new StringBuilder().append("id =").append(id).
                 append(", code = ").append(code)
-                .append(", fullName = ").append(fullName)
-                .append(", sign = ").append(fullName).toString();
+                .append(", fullName = ").append(name)
+                .append(", sign = ").append(name).toString();
     }
 }

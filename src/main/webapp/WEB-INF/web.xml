@@ -4,16 +4,41 @@
          xsi:schemaLocation="http://xmlns.jcp.org/xml/ns/javaee webapp_4_0.xsd"
          version="4.0">
 
-    <servlet>
-        <servlet-name>first-servlet</servlet-name>
-        <servlet-class>org.example.web.MainServlet</servlet-class>
-    </servlet>
-    <servlet-mapping>
-        <servlet-name>first-servlet</servlet-name>
-        <url-pattern>/my-servlet</url-pattern>
-    </servlet-mapping>
+<!--    <servlet>-->
+<!--        <servlet-name>first-servlet</servlet-name>-->
+<!--        <servlet-class>org.example.web.MainServlet</servlet-class>-->
+<!--    </servlet>-->
+<!--    <servlet-mapping>-->
+<!--        <servlet-name>first-servlet</servlet-name>-->
+<!--        <url-pattern>/my-servlet</url-pattern>-->
+<!--    </servlet-mapping>-->
     
-    <servlet>
-        <servlet-name>CurrencyServlet</servlet-name>
-    </servlet>
+<!--    <servlet>-->
+<!--        <servlet-name>CurrencyServlet</servlet-name>-->
+<!--        <servlet-class>org.example.moneyexchanger.servlet.CurrencyServlet</servlet-class>-->
+<!--    </servlet>-->
+<!--    <servlet-mapping>-->
+<!--        <servlet-name>CurrencyServlet</servlet-name>-->
+<!--        <url-pattern>/currency/*</url-pattern>-->
+<!--        <url-pattern>/currencies</url-pattern>-->
+<!--    </servlet-mapping>-->
+
+<!--    <servlet>-->
+<!--        <servlet-name>ExchangeRateServlet</servlet-name>-->
+<!--        <servlet-class>org.example.moneyexchanger.servlet.ExchangeRateServlet</servlet-class>-->
+<!--    </servlet>-->
+<!--    <servlet-mapping>-->
+<!--        <servlet-name>ExchangeRateServlet</servlet-name>-->
+<!--        <url-pattern>/exchangeRate/*</url-pattern>-->
+<!--        <url-pattern>/exchangeRates</url-pattern>-->
+<!--    </servlet-mapping>-->
+
+<!--    <servlet>-->
+<!--        <servlet-name>ExchangeServlet</servlet-name>-->
+<!--        <servlet-class>org.example.moneyexchanger.servlet.ExchangeServlet</servlet-class>-->
+<!--    </servlet>-->
+<!--    <servlet-mapping>-->
+<!--        <servlet-name>ExchangeServlet</servlet-name>-->
+<!--        <url-pattern>/exchange</url-pattern>-->
+<!--    </servlet-mapping>-->
 </web-app>

@@ -6,7 +6,6 @@ import org.example.moneyexchanger.model.Currency;
 
 import java.util.List;
 import java.util.NoSuchElementException;
-import java.util.Optional;
 
 public class CurrencyService {
 
@@ -45,9 +44,8 @@ public class CurrencyService {
                 .orElseThrow(() -> new NoSuchElementException("Currency with name=" + name + " not found"));
     }
 
-    public Currency createCurrency(String code, String name, String sign) {
-        validate(code, name, sign);
-        Currency newCurrency = new Currency(code, name, sign);
+    public Currency createCurrency(Currency newCurrency) {
+        validate(newCurrency.getCode(), newCurrency.getName(), newCurrency.getSign());
         currencyDao.save(newCurrency);
         return newCurrency;
     }
@@ -65,5 +63,10 @@ public class CurrencyService {
                 .orElseThrow(() -> new NoSuchElementException("Currency with id=" + id + " not found"));
 
         currencyDao.delete(id);
+    }
+
+    public Currency getCurrencyByCode(String code) {
+        return currencyDao.findByCode(code)
+                .orElseThrow(() -> new NoSuchElementException("Currency with code=" + code + " not found"));
     }
 }
