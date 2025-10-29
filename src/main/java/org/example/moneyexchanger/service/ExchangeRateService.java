@@ -14,6 +14,8 @@ public class ExchangeRateService {
 
     public ExchangeRateDao exchangeRateDao;
     public CurrencyDao currencyDao;
+    private static final String BASE_CURRENCY = "USD";
+
 
     public ExchangeRateService(ExchangeRateDao exchangeRateDao, CurrencyDao currencyDao) {
         this.exchangeRateDao = exchangeRateDao;
@@ -63,5 +65,49 @@ public class ExchangeRateService {
             throw new NoSuchElementException("Exchange rate not found");
         }
         exchangeRateDao.delete(id);
+    }
+
+    public BigDecimal getExchangeRate(String fromCode, String toCode){
+        if (fromCode.equals(toCode)){
+            return BigDecimal.ONE;
+        }
+
+        // Прямой курс
+        Optional<ExchangeRate> direct = exchangeRateDao.findByCodes(fromCode, toCode);
+        if (direct.isPresent()){
+            return direct.get().getRate();
+        }
+
+        // Обратный курс
+        Optional<ExchangeRate> reverse = exchangeRateDao.findByCodes(toCode, fromCode);
+        if (reverse.isPresent()){
+            BigDecimal rate = reverse.get().getRate();
+            return BigDecimal.ONE.divide(rate, 6);
+        }
+
+        // Кросс-курс
+        Optional<ExchangeRate> usdFrom = exchangeRateDao.findByCodes(BASE_CURRENCY, fromCode);
+        Optional<ExchangeRate> usdTo = exchangeRateDao.findByCodes(BASE_CURRENCY, toCode);
+
+        if (usdFrom.isPresent() && usdTo.isPresent()) {
+            BigDecimal rateA = usdFrom.get().getRate(); // USD->A
+            BigDecimal rateB = usdTo.get().getRate();   // USD->B
+
+            // Курс A->B = (USD->A) / (USD->B)
+            return rateB.divide(rateA, 6);
+        }
+
+        throw new RuntimeException("Exchange rate not found for pair " + fromCode + " → " + toCode);
+    }
+
+    // Коневертация суммы по курсу обмена
+    public BigDecimal convertAmount(String fromCode, String toCode, BigDecimal amount){
+        if (amount == null || amount.compareTo(BigDecimal.ZERO) < 0){
+            throw new IllegalArgumentException("Amount must be positive.");
+        }
+        BigDecimal rate = getExchangeRate(fromCode, toCode);
+        BigDecimal result = amount.multiply(rate);
+
+        return result.setScale(6);
     }
 }

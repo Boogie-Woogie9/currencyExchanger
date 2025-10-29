@@ -46,39 +46,33 @@ public class ExchangeServlet extends HttpServlet {
         try {
             BigDecimal amount = new BigDecimal(amountStr);
 
-            Optional<ExchangeRate> rateOpt = exchangeRateService.getExchangeRateByCodes(from.toUpperCase(), to.toUpperCase());
+            // Получаем курс с учётом всех 3 сценариев
+            BigDecimal rate = exchangeRateService.getExchangeRate(from.toUpperCase(), to.toUpperCase());
 
-            if (rateOpt.isEmpty()) {
-                sendError(resp, HttpServletResponse.SC_NOT_FOUND, "Exchange rate not found for " + from + " -> " + to);
-                return;
-            }
-
-            ExchangeRate rate = rateOpt.get();
-            BigDecimal convertedAmount = amount.multiply(rate.getRate());
+            // Пересчитываем сумму
+            BigDecimal converted = exchangeRateService.convertAmount(from.toUpperCase(), to.toUpperCase(), amount);
 
             Map<String, Object> result = Map.of(
-                    "baseCurrency", from.toUpperCase(),
-                    "targetCurrency", to.toUpperCase(),
-                    "rate", rate.getRate(),
-                    "amount", amount,
-                    "convertedAmount", convertedAmount
+                    "from", from.toUpperCase(),
+                    "to", to.toUpperCase(),
+                    "rate", rate.setScale(6),
+                    "amount", amount.setScale(2),
+                    "result", converted
             );
 
-            mapper.writeValue(resp.getWriter(), result);
             resp.setStatus(HttpServletResponse.SC_OK);
+            mapper.writeValue(resp.getWriter(), result);
 
         } catch (NumberFormatException e) {
             sendError(resp, HttpServletResponse.SC_BAD_REQUEST, "Invalid amount format");
+        } catch (IllegalArgumentException e) {
+            sendError(resp, HttpServletResponse.SC_BAD_REQUEST, e.getMessage());
+        } catch (RuntimeException e) {
+            sendError(resp, HttpServletResponse.SC_NOT_FOUND, e.getMessage());
         } catch (Exception e) {
-            sendError(resp, HttpServletResponse.SC_INTERNAL_SERVER_ERROR, e.getMessage());
+            sendError(resp, HttpServletResponse.SC_INTERNAL_SERVER_ERROR, "Unexpected error: " + e.getMessage());
         }
     }
-
-//    // ==== POST /exchange (альтернатива GET, если хочешь form-data) ====
-//    @Override
-//    protected void doPost(HttpServletRequest req, HttpServletResponse resp) throws IOException {
-//        doGet(req, resp); // просто переиспользуем логику
-//    }
 
     private void sendError(HttpServletResponse resp, int code, String message) throws IOException {
         resp.setStatus(code);
