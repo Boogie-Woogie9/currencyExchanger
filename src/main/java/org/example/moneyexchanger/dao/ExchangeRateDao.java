@@ -6,14 +6,23 @@ import java.sql.*;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
+import java.util.*;
 
 public class ExchangeRateDao implements CrudRepository<ExchangeRate> {
 
     private final CurrencyDao currencyDao = new CurrencyDao();
 
-    private ExchangeRate createNewExchangeRate(ResultSet rs) throws SQLException {
-        Currency baseCurrency = currencyDao.findById(rs.getLong("BaseCurrencyId")).orElse(null);
-        Currency targetCurrency = currencyDao.findById(rs.getLong("TargetCurrencyId")).orElse(null);
+    private ExchangeRate mapResultSetToExchangeRate(ResultSet rs, Map<Long, Currency> currencyCache) throws SQLException {
+        long baseId = rs.getLong("BaseCurrencyId");
+        long targetId = rs.getLong("TargetCurrencyId");
+
+        Currency baseCurrency = currencyCache.computeIfAbsent(baseId, id ->
+                currencyDao.findById(id).orElse(null)
+        );
+
+        Currency targetCurrency = currencyCache.computeIfAbsent(targetId, id ->
+                currencyDao.findById(id).orElse(null)
+        );
 
         return new ExchangeRate(
                 rs.getLong("ID"),
@@ -40,24 +49,27 @@ public class ExchangeRateDao implements CrudRepository<ExchangeRate> {
                     entity.setId(keys.getLong(1));
                 }
             }
+
         } catch (SQLException e) {
             throw new RuntimeException("Failed to save ExchangeRate", e);
         }
     }
 
-    // READ (все)
+    // READ all
     @Override
     public List<ExchangeRate> findAll() {
         String sql = "SELECT ID, BaseCurrencyId, TargetCurrencyId, Rate FROM ExchangeRates";
         List<ExchangeRate> rates = new ArrayList<>();
+        Map<Long, Currency> cache = new HashMap<>();
 
         try (Connection conn = Database.getConnection();
              PreparedStatement pstmt = conn.prepareStatement(sql);
              ResultSet rs = pstmt.executeQuery()) {
 
             while (rs.next()) {
-                rates.add(createNewExchangeRate(rs));
+                rates.add(mapResultSetToExchangeRate(rs, cache));
             }
+
         } catch (SQLException e) {
             throw new RuntimeException("Failed to load ExchangeRates", e);
         }
@@ -65,19 +77,22 @@ public class ExchangeRateDao implements CrudRepository<ExchangeRate> {
         return rates;
     }
 
-    // READ (по ID)
+    // READ by id
     @Override
     public Optional<ExchangeRate> findById(Long id) {
         String sql = "SELECT ID, BaseCurrencyId, TargetCurrencyId, Rate FROM ExchangeRates WHERE ID = ?";
+        Map<Long, Currency> cache = new HashMap<>();
+
         try (Connection conn = Database.getConnection();
              PreparedStatement pstmt = conn.prepareStatement(sql)) {
 
             pstmt.setLong(1, id);
             try (ResultSet rs = pstmt.executeQuery()) {
                 if (rs.next()) {
-                    return Optional.of(createNewExchangeRate(rs));
+                    return Optional.of(mapResultSetToExchangeRate(rs, cache));
                 }
             }
+
         } catch (SQLException e) {
             throw new RuntimeException("Failed to find ExchangeRate by id: " + id, e);
         }
@@ -85,27 +100,31 @@ public class ExchangeRateDao implements CrudRepository<ExchangeRate> {
         return Optional.empty();
     }
 
-    // READ (по кодам валют)
+    // READ by codes
     public Optional<ExchangeRate> findByCodes(String baseCurrencyCode, String targetCurrencyCode) {
-        String sql = "SELECT ID, BaseCurrencyId, TargetCurrencyId, Rate FROM ExchangeRates WHERE BaseCurrencyId = ? AND TargetCurrencyId = ?";
+        try {
+            Currency base = currencyDao.findByCode(baseCurrencyCode)
+                    .orElseThrow(() -> new SQLException("Base currency not found: " + baseCurrencyCode));
 
-        try (Connection conn = Database.getConnection();
-             PreparedStatement pstmt = conn.prepareStatement(sql)) {
+            Currency target = currencyDao.findByCode(targetCurrencyCode)
+                    .orElseThrow(() -> new SQLException("Target currency not found: " + targetCurrencyCode));
 
-            Long baseId = currencyDao.findByCode(baseCurrencyCode)
-                    .orElseThrow(() -> new SQLException("Base currency not found: " + baseCurrencyCode))
-                    .getId();
+            String sql = "SELECT ID, BaseCurrencyId, TargetCurrencyId, Rate FROM ExchangeRates WHERE BaseCurrencyId = ? AND TargetCurrencyId = ?";
 
-            Long targetId = currencyDao.findByCode(targetCurrencyCode)
-                    .orElseThrow(() -> new SQLException("Target currency not found: " + targetCurrencyCode))
-                    .getId();
+            try (Connection conn = Database.getConnection();
+                 PreparedStatement pstmt = conn.prepareStatement(sql)) {
 
-            pstmt.setLong(1, baseId);
-            pstmt.setLong(2, targetId);
+                pstmt.setLong(1, base.getId());
+                pstmt.setLong(2, target.getId());
 
-            try (ResultSet rs = pstmt.executeQuery()) {
-                if (rs.next()) {
-                    return Optional.of(createNewExchangeRate(rs));
+                try (ResultSet rs = pstmt.executeQuery()) {
+                    if (rs.next()) {
+                        Map<Long, Currency> cache = Map.of(
+                                base.getId(), base,
+                                target.getId(), target
+                        );
+                        return Optional.of(mapResultSetToExchangeRate(rs, new HashMap<>(cache)));
+                    }
                 }
             }
 
@@ -131,9 +150,7 @@ public class ExchangeRateDao implements CrudRepository<ExchangeRate> {
 
             int affectedRows = pstmt.executeUpdate();
             if (affectedRows == 0) {
-                System.out.println("NOTHING TO UPDATE");
-            } else {
-                System.out.println("ExchangeRate with id = " + entity.getId() + " UPDATED successfully");
+                System.out.println("ExchangeRate with id = " + entity.getId() + " not found for update.");
             }
 
         } catch (SQLException e) {
@@ -153,9 +170,7 @@ public class ExchangeRateDao implements CrudRepository<ExchangeRate> {
             int affectedRows = pstmt.executeUpdate();
 
             if (affectedRows == 0) {
-                System.out.println("ExchangeRate with id = " + id + " not found.");
-            } else {
-                System.out.println("ExchangeRate with id = " + id + " was deleted.");
+                System.out.println("ExchangeRate with id = " + id + " not found for deletion.");
             }
 
         } catch (SQLException e) {
@@ -163,5 +178,6 @@ public class ExchangeRateDao implements CrudRepository<ExchangeRate> {
         }
     }
 }
+
 
 
