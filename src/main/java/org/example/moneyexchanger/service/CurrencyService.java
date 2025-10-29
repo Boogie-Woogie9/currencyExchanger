@@ -6,27 +6,14 @@ import org.example.moneyexchanger.model.Currency;
 import java.util.List;
 import java.util.NoSuchElementException;
 
+import static org.example.moneyexchanger.utils.Utils.validate;
+
 public class CurrencyService {
 
     private final CurrencyDao currencyDao;
 
     public CurrencyService(CurrencyDao currencyDao) {
         this.currencyDao = currencyDao;
-    }
-
-    private void validate(String code, String name, String sign) {
-        if (code == null || code.isBlank()){
-            throw new IllegalArgumentException("Currency code is invalid");
-        }
-        if (sign == null || sign.isBlank()){
-            throw new IllegalArgumentException("Currency sign is invalid");
-        }
-        if (name == null || name.isBlank()){
-            throw new IllegalArgumentException("Currency name is invalid");
-        }
-        if (!code.matches("^[A-Z]{3}$")) {
-            throw new IllegalArgumentException("Invalid updatedCurrency code format (must be 3 uppercase letters)");
-        }
     }
 
     public List<Currency> getAllCurrencies() {
