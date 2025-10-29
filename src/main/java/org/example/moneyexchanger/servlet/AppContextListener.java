@@ -31,6 +31,7 @@ public class AppContextListener implements ServletContextListener {
 
     @Override
     public void contextDestroyed(ServletContextEvent sce) {
+        Database.close();
         System.out.println("[OK]: Application context destroyed.");
     }
 }
