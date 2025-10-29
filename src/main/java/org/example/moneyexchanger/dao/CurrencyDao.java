@@ -8,6 +8,29 @@ import java.util.Optional;
 
 public class CurrencyDao implements CrudRepository<Currency> {
 
+
+    // OPTIMIZE
+    private Optional<Currency> findByField(String field, String value) {
+        String sql = "SELECT ID, Code, FullName, Sign FROM Currencies WHERE " + field + " = ?";
+        try (Connection conn = Database.getConnection();
+             PreparedStatement pstmt = conn.prepareStatement(sql)) {
+            pstmt.setString(1, value);
+            try (ResultSet rs = pstmt.executeQuery()) {
+                if (rs.next()) {
+                    return Optional.of(new Currency(
+                            rs.getLong("ID"),
+                            rs.getString("FullName"),
+                            rs.getString("Code"),
+                            rs.getString("Sign")
+                    ));
+                }
+            }
+        } catch (SQLException e) {
+            throw new RuntimeException(e);
+        }
+        return Optional.empty();
+    }
+
     // CREATE
     @Override
     public void save(Currency entity) {
@@ -28,6 +51,9 @@ public class CurrencyDao implements CrudRepository<Currency> {
                 }
             }
         } catch (SQLException e) {
+            if (e.getMessage().contains("UNIQUE")) {
+                throw new RuntimeException("Currency with code " + entity.getCode() + " already exists", e);
+            }
             throw new RuntimeException(e);
         }
     }
@@ -59,73 +85,13 @@ public class CurrencyDao implements CrudRepository<Currency> {
 
     // READ (по ID)
     @Override
-    public Optional<Currency> findById(Long id) {
-        String sql = "SELECT ID, Code, FullName, Sign FROM Currencies WHERE ID = ?";
-        try (Connection conn = Database.getConnection();
-             PreparedStatement pstmt = conn.prepareStatement(sql)) {
-
-            pstmt.setLong(1, id);
-            try (ResultSet rs = pstmt.executeQuery()) {
-                if (rs.next()) {
-                    return Optional.of(new Currency(
-                            rs.getLong("ID"),
-                            rs.getString("FullName"),
-                            rs.getString("Code"),
-                            rs.getString("Sign")
-                    ));
-                }
-            }
-        } catch (SQLException e) {
-            throw new RuntimeException(e);
-        }
-        return Optional.empty();
-    }
+    public Optional<Currency> findById(Long id) { return findByField("ID", id.toString()); }
 
     // READ (по имени)
-    public Optional<Currency> findByName(String fullName) {
-        String sql = "SELECT ID, Code, FullName, Sign FROM Currencies WHERE FullName = ?";
-        try (Connection conn = Database.getConnection();
-             PreparedStatement pstmt = conn.prepareStatement(sql)) {
-
-            pstmt.setString(1, fullName);
-            try (ResultSet rs = pstmt.executeQuery()) {
-                if (rs.next()) {
-                    return Optional.of(new Currency(
-                            rs.getLong("ID"),
-                            rs.getString("FullName"),
-                            rs.getString("Code"),
-                            rs.getString("Sign")
-                    ));
-                }
-            }
-        } catch (SQLException e) {
-            throw new RuntimeException(e);
-        }
-        return Optional.empty();
-    }
+    public Optional<Currency> findByName(String fullName) { return findByField("FullName", fullName); }
 
     // READ (по коду)
-    public Optional<Currency> findByCode(String code) {
-        String sql = "SELECT ID, Code, FullName, Sign FROM Currencies WHERE Code = ?";
-        try (Connection conn = Database.getConnection();
-             PreparedStatement pstmt = conn.prepareStatement(sql)) {
-
-            pstmt.setString(1, code);
-            try (ResultSet rs = pstmt.executeQuery()) {
-                if (rs.next()) {
-                    return Optional.of(new Currency(
-                            rs.getLong("ID"),
-                            rs.getString("FullName"),
-                            rs.getString("Code"),
-                            rs.getString("Sign")
-                    ));
-                }
-            }
-        } catch (SQLException e) {
-            throw new RuntimeException(e);
-        }
-        return Optional.empty();
-    }
+    public Optional<Currency> findByCode(String code) { return findByField("Code", code); }
 
     // UPDATE
     @Override
